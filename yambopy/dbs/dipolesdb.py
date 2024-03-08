@@ -148,6 +148,14 @@ class YamboDipolesDB():
             #close database
             database.close()
 
+        # If and old format, the expand dipoles will not work, because we have no spin polarization axis.
+        # We just copy the spin up into spin down channel.
+        if self.spin == 2 and len(np.shape(dipoles))<5:
+            new_dipoles = np.zeros((2,)+tuple([dim for dim in np.shape(dipoles)]), dtype=np.complex128)
+            new_dipoles[0], new_dipoles[1] = dipoles, dipoles
+        
+            dipoles = new_dipoles
+        
         return dipoles
         
     def expandDipoles(self,dipoles=None,field_dir=[1,0,0],field_dir3=[0,0,1]):
@@ -310,6 +318,7 @@ class YamboDipolesDB():
 
         #get eigenvalues and weights of electrons
         eiv = electrons.eigenvalues_sp_pol
+
         weights = electrons.weights
         nv = electrons.nbandsv
         nc = electrons.nbandsc   
@@ -363,12 +372,14 @@ class YamboDipolesDB():
         na = np.newaxis
         epskres = np.zeros([esteps,nkpoints])
         #calculate epsilon
+
         for c,v,s in product(range(nv,lc),range(iv,nv),range(sp_pol)):
 
                 #get electron-hole energy and dipoles
                 #(sum over pol directions if needed)
                 eivs = eiv[s]
                 ecv  = eivs[:,c]-eivs[:,v]
+
 
                 dips = dipoles[s]
                 dip2=0.
